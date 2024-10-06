@@ -1,0 +1,81 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.metrics import confusion_matrix, classification_report, accuracy_score
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LinearRegression
+
+# Reading the dataset (Fixing the file path issue)
+pf = pd.read_csv('/content/user data - Sheet1.csv')
+
+# Convert 'Start date' and 'End date' to datetime format
+pf['Start date'] = pd.to_datetime(pf['Start date'])
+pf['End date'] = pd.to_datetime(pf['End date'])
+
+# Handling missing values using forward fill
+pf.ffill(inplace=True)
+
+# Create 'Duration (days)' column if it doesn't exist
+if 'Duration (days)' not in pf.columns:
+    pf['Duration (days)'] = (pf['End date'] - pf['Start date']).dt.days
+
+# Visualize the distribution of Accommodation cost
+plt.figure(figsize=(12, 6))
+sns.histplot(pf['Accommodation cost'], bins=30, kde=True)
+plt.title('Distribution of Accommodation Cost')
+plt.xlabel('Accommodation Cost')
+plt.ylabel('Frequency')
+plt.show()
+
+# Plot Accommodation Cost by Type
+plt.figure(figsize=(12, 6))
+sns.catplot(x='Accommodation type', y='Accommodation cost', data=pf)
+plt.title('Accommodation Cost by Type')
+plt.xlabel('Accommodation Type')
+plt.ylabel('Accommodation Cost')
+plt.xticks(rotation=45)
+plt.show()
+
+# Selecting features for regression
+features = ['Duration (days)', 'Traveler age', 'Accommodation cost', 'Transportation cost']
+X = pf[features]
+y = pf['Accommodation cost']
+
+# Splitting data into train and test sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Standardizing the features
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+# Training the model
+model = LinearRegression()
+model.fit(X_train_scaled, y_train)
+
+# Predicting on the test data
+y_pred = model.predict(X_test_scaled)
+
+# Evaluating the model
+print("Model Evaluation:")
+print(f"R^2 Score: {model.score(X_test_scaled, y_test)}")
+
+# Plotting Actual vs Predicted values
+plt.figure(figsize=(12, 6))
+plt.scatter(y_test, y_pred)
+plt.xlabel('Actual Accommodation Cost')
+plt.ylabel('Predicted Accommodation Cost')
+plt.title('Actual vs Predicted Accommodation Cost')
+plt.show()
+
+# Summary Report
+print("Summary Report:")
+print(f"Mean Absolute Error: {np.mean(np.abs(y_test - y_pred))}")
+print(f"Mean Squared Error: {np.mean((y_test - y_pred)**2)}")
+print(f"Root Mean Squared Error: {np.sqrt(np.mean((y_test - y_pred)**2))}")
+
+# Save the processed dataset
+pf.to_csv(r'C:\Users\vijay\Downloads\processed_travel_blog_data.csv', index=False)
+print("Processed dataset saved.")
